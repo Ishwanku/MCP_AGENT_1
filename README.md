@@ -136,7 +136,7 @@ The API keys `secret-key1`, `secret-key2`, `secret-key3` found in `servers.yaml`
 You can run Qdrant via Docker (adjust path as needed):
 
 ```bash
-docker run -p 6333:6333 -v $(pwd)/qdrant_db:/qdrant/storage qdrant/qdrant
+docker run -p 6333:6333 -v "$(pwd)/qdrant_db":/qdrant/storage qdrant/qdrant
 ```
 
 **Note for Windows Users:** If using Command Prompt or PowerShell, replace `$(pwd)` with the absolute path to the project's `qdrant_db` directory (e.g., `-v C:\\Users\\YourUser\\path\\to\\ishwanku-mcp-agent-poc\\qdrant_db:/qdrant/storage`).

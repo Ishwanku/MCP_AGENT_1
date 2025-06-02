@@ -114,31 +114,32 @@ class MCPClient:
             except Exception as e:
                 print(f"Error during streams cleanup: {e}")
             self._streams_context = None
-        print(f"Client '{self.name}': Cleanup complete.")
+        print("Client: Cleanup complete.")
 
 async def main():
     """Main function to demonstrate MCPClient usage."""
     # Get server URL and API key from environment variables or use defaults
     # These defaults point to the Task Manager server as an example.
     # You can change these in your .env file to target a different server.
-    target_server_url = os.getenv("SIMPLE_CLIENT_TARGET_URL", "http://localhost:8010/sse") 
+    target_server_url = os.getenv("SIMPLE_CLIENT_TARGET_URL", "http://localhost:8010/sse")
     target_api_key = os.getenv("SIMPLE_CLIENT_TARGET_API_KEY", "secret-key1")
-
-    print(f"SimpleClient: Targeting server at {target_server_url}, API_Key_Ending_With={target_api_key[-4:] if len(target_api_key) > 4 else '****'}")
-
+    print(f"SimpleClient: Targeting server at {target_server_url}, API_Key_Ending_With={target_api_key[-4:]}")
     client = MCPClient(server_url=target_server_url, api_key=target_api_key)
-    
     try:
         await client.connect_to_sse_server()
-        
         print("\nAttempting to call tool 'get_tasks'...")
         response = await client.call_tool(tool_name="get_tasks", tool_input=None)
-        
         if response.content and response.content[0].type == "text":
             print(f"Content from 'get_tasks':\n{response.content[0].text}")
-        else:
-            print(f"Received unexpected response format from 'get_tasks': {response.content}")
-            
+        print("\nAttempting to call tool 'add_new_task'...")
+        response = await client.call_tool(tool_name="add_new_task", tool_input={"task": "Buy groceries"})
+        print(f"Content from 'add_new_task':\n{response.content[0].text}")
+        print("\nAttempting to call tool 'complete_task'...")
+        response = await client.call_tool(tool_name="complete_task", tool_input={"task": "Test MCP agent"})
+        print(f"Content from 'complete_task':\n{response.content[0].text}")
+        print("\nAttempting to call tool 'get_tasks' again...")
+        response = await client.call_tool(tool_name="get_tasks", tool_input=None)
+        print(f"Content from 'get_tasks':\n{response.content[0].text}")
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:

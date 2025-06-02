@@ -1,6 +1,10 @@
 [
-    {
-      "title": "Test MCP agent",
-      "isDone": false
-    }
-  ]
+  {
+    "title": "Test MCP agent",
+    "isDone": true
+  },
+  {
+    "title": "Buy groceries",
+    "isDone": false
+  }
+]

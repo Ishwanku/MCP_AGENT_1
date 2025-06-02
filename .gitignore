@@ -37,7 +37,6 @@ build/
 # Assuming you don't want to track the actual Qdrant data files,
 # only the structure or relevant config if any.
 # If you want to track some specific Qdrant config, adjust these lines.
-qdrant_db/.lock
-qdrant_db/collection/mem0_memories/storage.sqlite
+qdrant_db/
 # You might want to ignore the whole qdrant_db/ if it's purely generated data
 # qdrant_db/
