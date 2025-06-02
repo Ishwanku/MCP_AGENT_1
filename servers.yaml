@@ -1,10 +1,43 @@
+# servers:
+#   - name: memory
+#     url: http://localhost:8030/sse
+#     api_key: secret-key3
+#   - name: task-manager
+#     url: http://localhost:8010/sse
+#     api_key: secret-key1
+#   - name: calendar
+#     url: http://localhost:8020/sse
+#     api_key: secret-key2
+
 servers:
-  - name: memory
-    url: http://localhost:8030/sse
-    api_key: secret-key3
-  - name: task-manager
-    url: http://localhost:8010/sse
-    api_key: secret-key1
-  - name: calendar
-    url: http://localhost:8020/sse
-    api_key: secret-key2
+  memory:
+    host: localhost
+    port: 3001
+    tools:
+      - memory_store
+      - memory_retrieve
+    context:
+      MEM0_API_KEY: ${MEM0_API_KEY}
+      QDRANT_URL: ${QDRANT_URL}
+      QDRANT_API_KEY: ${QDRANT_API_KEY}
+  tasks:
+    host: localhost
+    port: 3002
+    tools:
+      - get_tasks
+      - add_task
+  calendar:
+    host: localhost
+    port: 3003
+    tools:
+      - get_events
+      - add_event
+  crawler:
+    host: localhost
+    port: 3005
+    tools:
+      - crawl_page
+      - crawl_site
+      - search_page
+    context:
+      MEM0_API_KEY: ${MEM0_API_KEY}
