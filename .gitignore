@@ -1,0 +1,16 @@
+# Environment variables
+.env
+
+# Python specific ignores
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.ipynb_checkpoints/
+.pytest_cache/
+.coverage
+.mypy_cache/
+.pytest_cache/

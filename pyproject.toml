@@ -1,0 +1,20 @@
+[project]
+name = "ishwanku-mcp-agent-poc"
+version = "0.1.0"
+description = "MCP Agent POC with memory, task, and calendar management"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "mcp[cli]>=1.6.0",
+    "openai>=1.70.0",
+    "python-dotenv>=1.1.0",
+    "pyyaml>=6.0.2",
+    "starlette>=0.46.1",
+    "uvicorn>=0.34.0",
+    "langchain>=0.3.0",
+    "langchain-community>=0.2.0",
+    "mem0ai>=0.1.88",
+    "chromadb>=0.4.24",
+    "ollama>=0.5.0",
+    "langchain-ollama>=0.1.8",
+]
