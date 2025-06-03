@@ -1,20 +1,18 @@
-from fastmcp.server import MCPServer
+from mcp.server.fastmcp import FastMCP
 from tools.crawler_tools import crawl_page_tool, crawl_site_tool, search_page_tool
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
+import uvicorn
+from utils.starlette import create_starlette_app
 
 async def start_crawler_server():
-    server = MCPServer(
+    server = FastMCP(
+        name="Crawler",
         host="localhost",
         port=3005,
         tools=[crawl_page_tool, crawl_site_tool, search_page_tool],
-        context={
-            "MEM0_API_KEY": os.getenv("MEM0_API_KEY")
-        }
+        context={}
     )
-    await server.start()
+    starlette_app = create_starlette_app(server._mcp_server, api_key="secret-key4", debug=True)
+    uvicorn.run(starlette_app, host="localhost", port=3005)
 
 if __name__ == "__main__":
     import asyncio

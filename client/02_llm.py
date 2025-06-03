@@ -1,52 +1,22 @@
-"""
-Example client demonstrating LLM-driven tool usage with ClientManager.
-
-This script initializes an OpenAI client and a ClientManager. It loads server
-configurations, connects to MCP servers to get their available tools, and then
-prompts the user for a query.
-
-The query is sent to an LLM (e.g., GPT via OpenAI API or a local Ollama model
-if configured for OpenAI compatibility) along with the list of tools gathered
-from all MCP servers. The LLM decides if a tool call is appropriate.
-
-If the LLM returns a tool call, the ClientManager processes it by dispatching
-the call to the correct MCP server and tool. The result is then printed.
-"""
 import asyncio
 import os
+import json
 from dotenv import load_dotenv
-from openai import OpenAI
-import yaml # OpenAI client for interacting with LLMs
-from utils.client_manager import ClientManager # Manages connections to multiple MCP servers
+import yaml
+from llm_client import LLMClient
+from utils.client_manager import ClientManager
 
-# Load environment variables from .env (e.g., OPENAI_API_KEY, OLLAMA_BASE_URL, MODEL)
+# Load environment variables from .env
 load_dotenv()
 
-# --- BEGIN DEBUG PRINTS ---
+# Debug prints for environment variables
+print(f"DEBUG: LLM_PROVIDER: {os.getenv('LLM_PROVIDER')}")
+print(f"DEBUG: GEMINI_API_KEY: {os.getenv('GEMINI_API_KEY')}")
 print(f"DEBUG: OPENAI_API_KEY: {os.getenv('OPENAI_API_KEY')}")
-print(f"DEBUG: OPENAI_BASE_URL: {os.getenv('OPENAI_BASE_URL')}")
-print(f"DEBUG: OLLAMA_BASE_URL (for reference): {os.getenv('OLLAMA_BASE_URL')}")
-print(f"DEBUG: MODEL: {os.getenv('MODEL')}")
-# --- END DEBUG PRINTS ---
-
-# Initialize the OpenAI client.
-# This will use OPENAI_API_KEY by default.
-# If using a local Ollama model with an OpenAI-compatible API, ensure OLLAMA_BASE_URL is set
-# in your .env and that your local Ollama server is running.
-# Example .env for Ollama: OPENAI_API_KEY="ollama" OLLAMA_BASE_URL="http://localhost:11434/v1"
-
-ollama_base_url = os.getenv("OLLAMA_BASE_URL")
-if ollama_base_url:
-    print(f"DEBUG: Using Ollama base URL: {ollama_base_url}")
-    # Explicitly pass a non-empty api_key, as some Ollama OpenAI-compatible endpoints might expect it
-    # even if not strictly validated, for all parameters (like model) to be processed correctly.
-    client = OpenAI(base_url=ollama_base_url, api_key=os.getenv("OPENAI_API_KEY", "ollama"))
-else:
-    client = OpenAI()
-
-# Get the LLM model choice from environment variable, defaulting to gpt-4o-mini
-# This can be changed to a local model like "llama3" if using Ollama
-model = os.getenv("MODEL", "gpt-4o-mini") 
+print(f"DEBUG: GROK_API_KEY: {os.getenv('GROK_API_KEY')}")
+print(f"DEBUG: OLLAMA_HOST: {os.getenv('OLLAMA_HOST')}")
+print(f"DEBUG: OLLAMA_BASE_URL: {os.getenv('OLLAMA_BASE_URL')}")
+print(f"DEBUG: LLM_MODEL: {os.getenv('LLM_MODEL')}")
 
 async def main():
     """Main function to run the LLM-powered tool-using client."""
@@ -72,44 +42,51 @@ async def main():
     
     print(f"Successfully loaded {len(client_manager.tools)} tools for the LLM.")
 
+    # Initialize LLM client
+    try:
+        llm_client = LLMClient()
+    except Exception as e:
+        print(f"Failed to initialize LLM client: {e}")
+        await client_manager.cleanup()
+        return
+
     # Get query from user
-    query = input("\nEnter your query for the LLM (e.g., 'What are my tasks?', 'Save a memory: I had a great meeting today.'): ")
+    query = input("\nEnter your query for the LLM (e.g., 'Crawl example.com for titles', 'Search example.com for privacy policy'): ")
     if not query:
         print("No query entered. Exiting.")
         await client_manager.cleanup()
         return
 
-    print(f"\nSending query to LLM ('{model}') with available tools...")
+    print(f"\nSending query to LLM ('{llm_client.model}') with available tools...")
     try:
-        # LLM Interaction Block
-        # -----------------------
-        # Tool usage is currently commented out to allow this script to work with LLMs 
-        # (like llama3 via Ollama) that might not fully support OpenAI-compatible tool calling 
-        # or when a specific tool-supporting model (e.g., qwen2:7b-instruct) is not available.
-        #
-        # To re-enable LLM-driven tool usage:
-        # 1. Ensure your .env file specifies a MODEL that supports OpenAI-compatible tool calls 
-        #    (e.g., MODEL="qwen2:7b-instruct" when using Ollama, or a suitable OpenAI model).
-        # 2. Ensure the chosen model is running and accessible (e.g., `ollama pull qwen2:7b-instruct`).
-        # 3. Uncomment the 'tools' and 'tool_choice' parameters in the call below.
-        # -----------------------
-
         # Send the query and available tools to the LLM
-        response = client.chat.completions.create(
-            model=model,
+        response = await llm_client.chat(
             messages=[{"role": "user", "content": f"User's query: {query}"}],
-            # tools=client_manager.tools, # Provide the aggregated list of tools to the LLM
-            # tool_choice="auto",         # Let the LLM decide whether to use a tool
-            temperature=0.0,            # Low temperature for more deterministic tool calls
+            tools=client_manager.tools
         )
 
+        if response.get("error"):
+            print(f"LLM error: {response['error']}")
+            await client_manager.cleanup()
+            return
+
         # Check if the LLM decided to call a tool
-        llm_message = response.choices[0].message
-        if llm_message.tool_calls:
+        if response.get("tool_calls"):
             print("LLM decided to call a tool.")
+            # Convert LLMClient tool calls to OpenAI-compatible format for ClientManager
+            tool_calls = [
+                type("ToolCall", (), {
+                    "id": f"call_{i}",
+                    "type": "function",
+                    "function": type("Function", (), {
+                        "name": tc["function"]["name"],
+                        "arguments": json.dumps(tc["function"]["arguments"])
+                    })()
+                })()
+                for i, tc in enumerate(response["tool_calls"])
+            ]
             # Process the tool call(s) using ClientManager
-            # This will find the right MCP client and execute the tool call
-            results = await client_manager.process_tool_call(llm_message.tool_calls)
+            results = await client_manager.process_tool_call(tool_calls)
             print("\n--- Tool Call Results ---")
             if results:
                 for result in results:
@@ -119,7 +96,7 @@ async def main():
         else:
             # If no tool call, print the LLM's direct response
             print("\n--- LLM Response (no tool call) ---")
-            print(llm_message.content)
+            print(response["message"]["content"])
     
     except Exception as e:
         print(f"An error occurred during LLM interaction or tool processing: {e}")
