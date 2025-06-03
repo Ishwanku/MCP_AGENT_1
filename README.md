@@ -1,210 +1,252 @@
-# 🧠 MCP Agent with Mem0 and Task/Calendar Integration
+# MCP Agent
 
-A Model Context Protocol (MCP) Agent that integrates with multiple MCP servers to provide AI agents with long-term memory, task management, calendar event capabilities, and web crawling functionality. This project uses Mem0, Qdrant, and FastMCP to deliver an intelligent and extensible agent system.
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python Version](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
 
-## 📁 Project Structure
+A modular, extensible agent framework for building AI-powered applications with specialized agents for memory, tasks, calendar, and web crawling.
+
+## Overview
+
+The MCP Agent is a multi-agent system where each agent specializes in a specific domain:
+
+- **Memory Agent**: Manages long-term memory storage and retrieval using vector databases.
+- **Tasks Agent**: Handles task management with priority and status tracking.
+- **Calendar Agent**: Manages scheduling and time-based operations with Google Calendar integration.
+- **Crawler Agent**: Performs web crawling and data extraction with metadata storage.
+
+This framework uses FastMCP for server implementation, providing Server-Sent Events (SSE) for real-time communication and a RESTful API for tool execution.
+
+## Project Structure
 
 ```plaintext
-.
-├── client/                     # Client-side code
-│   ├── agents/                # LangChain agent implementations
-│   ├── utils/                 # Client utility functions
-│   ├── 01a_simple_client.py   # Basic task manager interaction
-│   ├── 01b_client.py         # Multi-server memory, task, calendar
-│   ├── 02_llm.py             # LLM-driven tool use
-│   ├── 03_agents.py          # Full LangChain agent
-│   ├── chat_client.py        # Chat interface implementation
-│   ├── llm_client.py         # LLM client implementation
-│   ├── sse_client.py         # Server-Sent Events client
-│   └── tool_discovery.py     # Tool discovery utilities
-├── server/                    # Server-side code
-│   ├── tools/                # Server utility tools
-│   │   └── crawler_tools.py  # Web crawling tools implementation
-│   ├── utils/                # Server utility functions
-│   ├── server_memory.py      # Memory management server
-│   ├── server_tasks.py       # Task management server
-│   ├── server_calendar.py    # Calendar management server
-│   └── crawler_server.py     # Web crawler server
-├── tasks/                    # Task-related data and utilities
-├── assets/                   # Project assets and resources
-├── qdrant_db/               # Qdrant vector database storage
-├── .env                     # Environment variables (create from .env.example)
-├── servers.yaml             # Server configurations
-├── pyproject.toml           # Project dependencies
-└── README.md               # This file
+mcp-agent/
+│
+├── core/                # Core utilities and base classes
+│   ├── utils/           # Utility modules (Starlette, memory)
+│   ├── config.py        # Configuration management
+│   ├── database.py      # Database connection and migrations
+│   ├── models.py        # Database models
+│   └── mcp_client.py    # MCP client implementation
+│
+├── agents/              # Agent implementations
+│   ├── memory_agent.py  # Memory agent implementation
+│   ├── tasks_agent.py   # Tasks agent implementation
+│   ├── calendar_agent.py# Calendar agent implementation
+│   └── crawler_agent.py # Crawler agent implementation
+│
+├── tools/               # Tool definitions for agents
+│   ├── memory_tools.py  # Memory-related tools
+│   ├── tasks_tools.py   # Task management tools
+│   ├── calendar_tools.py# Calendar and scheduling tools
+│   └── crawler_tools.py # Web crawling and data extraction tools
+│
+├── server/              # Server implementations (if separate from agents)
+│
+├── client/              # Client examples and utilities
+│   └── 01a_simple_client.py  # Simple client example
+│
+├── tests/               # Test files
+│
+├── examples/            # Example usage and tutorials
+│
+├── assets/              # Static assets and documentation images
+│
+├── .env                 # Environment variables (not in version control)
+├── .gitignore           # Git ignore file
+├── pyproject.toml       # Project dependencies and configuration
+├── uv.lock              # Dependency lock file
+└── README.md            # Project documentation (this file)
 ```
 
-## 🚀 Core Components
-
-### Server Components
-
-1. **Memory Server** (`server/server_memory.py`)
-   - Manages long-term memory using Mem0 and Qdrant
-   - Tools: `save_memory`, `search_memories`, `get_all_memories`
-   - Runs on port 8030 by default
-
-2. **Task Server** (`server/server_tasks.py`)
-   - Handles task management operations
-   - Tools: `get_tasks`, `add_new_task`, `complete_task`
-   - Runs on port 8010 by default
-
-3. **Calendar Server** (`server/server_calendar.py`)
-   - Manages calendar events
-   - Tool: `get_events`
-   - Runs on port 8020 by default
-
-4. **Crawler Server** (`server/crawler_server.py`)
-   - Provides web crawling capabilities
-   - Tools:
-     - `crawl_page`: Extract content from a single webpage
-     - `crawl_site`: Recursively crawl a website
-     - `search_page`: Search for text within a webpage
-   - Runs on port 3005 by default
-   - Stores results in `crawler_data.json`
-
-### Client Components
-
-1. **Simple Client** (`client/01a_simple_client.py`)
-   - Basic task manager interaction
-   - Demonstrates direct MCP server communication
-
-2. **Multi-Server Client** (`client/01b_client.py`)
-   - Interacts with all MCP servers
-   - Shows memory, task, calendar, and crawler integration
-
-3. **LLM Client** (`client/02_llm.py`)
-   - Implements LLM-driven tool use
-   - Uses OpenAI-compatible API for intent classification
-
-4. **LangChain Agent** (`client/03_agents.py`)
-   - Full agent implementation using LangChain
-   - Integrates all tools and capabilities
-
-## 🛠️ Setup and Installation
+## Installation
 
 ### Prerequisites
 
-- Python 3.13+
-- `uv` package manager
-- OpenAI API key or compatible local API (e.g., Ollama)
-- Qdrant running locally
-- Git
-- Additional dependencies for web crawling:
-  - `aiohttp`
-  - `beautifulsoup4`
+- Python 3.9 or higher
+- Git (for cloning the repository)
+- A virtual environment tool (recommended: `venv` or `virtualenv`)
+- Mem0 API key for memory operations (get it from [Mem0](https://mem0.ai))
+- Google Calendar API credentials (optional, for calendar integration)
 
-### Environment Setup
+### Steps
 
-1. **Install Dependencies**
+1. **Clone the Repository**
 
    ```bash
+   git clone https://github.com/Ishwanku/MCP_AGENT_1.git
+   cd mcp-agent-poc
+   ```
+
+2. **Set Up a Virtual Environment**
+
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
+
+3. **Install Dependencies**
+
+   Using `uv` (recommended for faster installation):
+
+   ```bash
+   pip install uv
    uv sync
    ```
 
-2. **Configure Environment**
-
-   Create a `.env` file with:
-
-   ```env
-   # For Ollama (local LLM)
-   MODEL="qwen2:7b-instruct"
-   OPENAI_API_KEY="ollama"
-   OPENAI_BASE_URL="http://localhost:11434/v1"
-   OLLAMA_BASE_URL="http://localhost:11434/v1"
-
-   # For OpenAI API
-   MODEL="gpt-4o-mini"
-   OPENAI_API_KEY="your-api-key"
-   ```
-
-3. **Start Qdrant**
+   Or using standard pip:
 
    ```bash
-   docker run -p 6333:6333 -v "$(pwd)/qdrant_db":/qdrant/storage qdrant/qdrant
+   pip install -e .
    ```
 
-## 🏃‍♂️ Running the Project
+4. **Configure Environment Variables**
 
-1. **Start MCP Servers**
+   Copy the `.env.example` file to `.env` and update the values:
 
    ```bash
-   uv run server/server_memory.py
-   uv run server/server_tasks.py
-   uv run server/server_calendar.py
-   uv run server/crawler_server.py
+   cp .env.example .env
+   # Edit .env to add your Mem0 API key and other configurations
    ```
 
-2. **Run Client Scripts**
+   Key configurations:
 
-   ```bash
-   # Basic task manager
-   uv run client/01a_simple_client.py
+   - `MEM0_API_KEY`: Your Mem0 API key for memory operations
+   - `API_GOOGLE_CALENDAR_CREDENTIALS` and `API_GOOGLE_CALENDAR_TOKEN`: Paths to Google Calendar API credentials (if using calendar integration)
+   - `SECURITY_SECRET_KEY`: A secure key for JWT token generation (change in production)
 
-   # Multi-server client
-   uv run client/01b_client.py
+## Running the Agents
 
-   # LLM-driven client
-   uv run client/02_llm.py
+Each agent runs as a separate server on its own port. Start each agent server in a separate terminal window or as a background process.
 
-   # Full LangChain agent
-   uv run client/03_agents.py
-   ```
+### Start the Memory Agent
 
-## 🔧 Technical Details
+```bash
+python -m agents.memory_agent
+```
 
-### Server Architecture
+- Default port: 8030
+- Handles memory storage and retrieval
 
-- Each server runs independently using FastMCP
-- Servers communicate via Server-Sent Events (SSE)
-- Authentication using API keys
-- Environment-based configuration
+### Start the Tasks Agent
 
-### Client Architecture
+```bash
+python -m agents.tasks_agent
+```
 
-- Modular design with separate components
-- SSE client for real-time communication
-- LLM integration for intelligent responses
-- LangChain for agent orchestration
+- Default port: 8010
+- Manages task creation, updates, and status tracking
 
-### Memory System
+### Start the Calendar Agent
 
-- Mem0 for memory management
-- Qdrant for vector storage
-- Semantic search capabilities
-- User-based memory isolation
+```bash
+python -m agents.calendar_agent
+```
 
-### Task System
+- Default port: 8020
+- Handles scheduling and calendar events
 
-- JSON-based task storage
-- CRUD operations for tasks
-- User-based task isolation
-- Task completion tracking
+### Start the Crawler Agent
 
-### Calendar System
+```bash
+python -m agents.crawler_agent
+```
 
-- YAML-based event storage
-- Event retrieval capabilities
-- Extensible for calendar API integration
+- Default port: 3006
+- Performs web crawling and data extraction
 
-### Crawler System
+## Using the Client
 
-- Web page content extraction
-- Recursive site crawling
-- Text search within pages
-- JSON-based result storage
-- Rate limiting and depth control
-- BeautifulSoup for HTML parsing
+You can interact with the agents using the provided client examples or build your own client.
 
-## 📝 License
+Run a simple client example:
 
-This project is licensed under the MIT License.
+```bash
+python client/01a_simple_client.py
+```
 
-## 🙏 Acknowledgements
+## API Documentation
 
-- Mem0
-- Qdrant
-- LangChain
-- FastMCP
-- Ollama
-- BeautifulSoup4
-- aiohttp
+Each agent exposes two main endpoints:
+
+1. **SSE Endpoint**: `/sse` - For real-time Server-Sent Events
+2. **Tool Execution Endpoint**: `/tools/{tool_name}` - For executing specific tools (POST request)
+
+### Authentication
+
+API keys are used for authentication. Include the appropriate API key in the `X-API-Key` header for each request.
+
+### Available Tools
+
+- **Memory Agent**:
+  - `store_information`: Store data in long-term memory
+  - `retrieve_information`: Retrieve data from memory
+  - `search_information`: Search memory with vector similarity
+
+- **Tasks Agent**:
+  - `create_task`: Create a new task
+  - `update_task`: Update an existing task
+  - `list_tasks`: List all tasks
+  - `delete_task`: Delete a task
+
+- **Calendar Agent**:
+  - `create_event`: Create a new calendar event
+  - `update_event`: Update an existing event
+  - `list_events`: List calendar events
+  - `delete_event`: Delete an event
+
+- **Crawler Agent**:
+  - `crawl_url`: Crawl a specified URL
+  - `extract_content`: Extract content from crawled data
+  - `save_data`: Save extracted data
+
+## Development
+
+### Running Tests
+
+```bash
+pytest
+```
+
+### Code Style
+
+We follow PEP 8 for Python code. Use tools like `black` and `isort` for code formatting:
+
+```bash
+pip install black isort
+black .
+isort .
+```
+
+### Type Checking
+
+We use `mypy` for static type checking:
+
+```bash
+pip install mypy
+mypy .
+```
+
+## Troubleshooting
+
+- **Agent Server Won't Start**: Check if the port is already in use. Update the port in `.env` if needed.
+- **Connection Errors**: Ensure all agents are running and accessible at their configured host/port.
+- **Mem0 API Key Issues**: Verify that your Mem0 API key is correctly set in the `.env` file.
+- **Database Errors**: Check the database URL in `.env` and ensure the database file is writable.
+
+## Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a new branch for your feature or bug fix
+3. Make your changes and commit them with descriptive messages
+4. Push your changes to your fork
+5. Submit a pull request with a detailed description of your changes
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Contact
+
+For questions or support, please open an issue on GitHub or contact the project maintainers.

@@ -1,42 +1,124 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
+
+# IDE - PyCharm
+.idea/
+*.iml
+*.iws
+*.ipr
+.idea_modules/
+
+# IDE - Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Database
+*.db
+*.sqlite3
+*.sqlite
+mcp_agent.db
+qdrant_db/
+qdrant_db;C/
+
+# Logs
+*.log
+logs/
+log/
+test_intent.log
+
 # Environment variables
 .env
+.env.*
+!.env.example
 
-# Python specific ignores
+# Project specific
+tasks/
+assets/
+crawler_data.json
+*.yaml
+!servers.yaml
+!alembic.ini
+
+# Google Calendar credentials
+credentials.json
+token.json
+*.json
+!package.json
+!package-lock.json
+
+# Alembic
+alembic/versions/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Cache
+.cache/
+.pytest_cache/
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/                 # Virtual environment folder (often named 'env' or 'venv')
-venv/                # Another common virtual environment folder name
-.ipynb_checkpoints/  # Jupyter Notebook checkpoints
-.pytest_cache/       # pytest cache directory
-.coverage            # Coverage.py results file
-.mypy_cache/         # MyPy type checker cache
-.ruff_cache/         # Ruff linter/formatter cache
 
-# IDE-specific files (e.g., VS Code, PyCharm)
-.vscode/
-.idea/
-
-# Operating System generated files
-.DS_Store            # macOS
-Thumbs.db            # Windows
-
-# Build artifacts and distributions
+# Distribution
 dist/
 build/
 *.egg-info/
 
-# Log files and temporary data
-*.log
-*.tmp
-*.bak
+# System Files
+.DS_Store
+Thumbs.db
+desktop.ini
 
-# Qdrant Database specific ignores (since you have a qdrant_db folder)
-# Assuming you don't want to track the actual Qdrant data files,
-# only the structure or relevant config if any.
-# If you want to track some specific Qdrant config, adjust these lines.
-qdrant_db/
-# You might want to ignore the whole qdrant_db/ if it's purely generated data
-# qdrant_db/
+# Lock files
+uv.lock
+poetry.lock

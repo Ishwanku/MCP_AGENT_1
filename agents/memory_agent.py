@@ -7,8 +7,8 @@ capabilities through the FastMCP protocol.
 """
 import json
 from mcp.server.fastmcp import FastMCP
-from utils.starlette import create_starlette_app
-from utils.memory import get_mem0_client
+from core.utils.starlette import create_starlette_app
+from core.utils.memory import get_mem0_client
 import warnings
 import os
 from dotenv import load_dotenv
