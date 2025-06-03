@@ -1,203 +1,210 @@
 # 🧠 MCP Agent with Mem0 and Task/Calendar Integration
 
-A MCP Agent that integrates with multiple **Model Context Protocol (MCP)** servers to provide AI agents with long-term memory, task management, and calendar event capabilities. This project uses **Mem0**, **Qdrant**, and **FastMCP** to deliver an intelligent and extensible agent system.
+A Model Context Protocol (MCP) Agent that integrates with multiple MCP servers to provide AI agents with long-term memory, task management, calendar event capabilities, and web crawling functionality. This project uses Mem0, Qdrant, and FastMCP to deliver an intelligent and extensible agent system.
 
----
+## 📁 Project Structure
 
-## Table of Contents
+```plaintext
+.
+├── client/                     # Client-side code
+│   ├── agents/                # LangChain agent implementations
+│   ├── utils/                 # Client utility functions
+│   ├── 01a_simple_client.py   # Basic task manager interaction
+│   ├── 01b_client.py         # Multi-server memory, task, calendar
+│   ├── 02_llm.py             # LLM-driven tool use
+│   ├── 03_agents.py          # Full LangChain agent
+│   ├── chat_client.py        # Chat interface implementation
+│   ├── llm_client.py         # LLM client implementation
+│   ├── sse_client.py         # Server-Sent Events client
+│   └── tool_discovery.py     # Tool discovery utilities
+├── server/                    # Server-side code
+│   ├── tools/                # Server utility tools
+│   │   └── crawler_tools.py  # Web crawling tools implementation
+│   ├── utils/                # Server utility functions
+│   ├── server_memory.py      # Memory management server
+│   ├── server_tasks.py       # Task management server
+│   ├── server_calendar.py    # Calendar management server
+│   └── crawler_server.py     # Web crawler server
+├── tasks/                    # Task-related data and utilities
+├── assets/                   # Project assets and resources
+├── qdrant_db/               # Qdrant vector database storage
+├── .env                     # Environment variables (create from .env.example)
+├── servers.yaml             # Server configurations
+├── pyproject.toml           # Project dependencies
+└── README.md               # This file
+```
 
-- [Overview](#overview)
-- [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Environment Setup](#environment-setup)
-- [Running the Project](#running-the-project)
-- [Assets](#assets)
-- [Tech Stack](#tech-stack)
-- [License](#license)
-- [Acknowledgements](#acknowledgements)
+## 🚀 Core Components
 
----
+### Server Components
 
-## Overview
+1. **Memory Server** (`server/server_memory.py`)
+   - Manages long-term memory using Mem0 and Qdrant
+   - Tools: `save_memory`, `search_memories`, `get_all_memories`
+   - Runs on port 8030 by default
 
-This POC demonstrates an MCP Agent that connects to **three MCP servers**:
+2. **Task Server** (`server/server_tasks.py`)
+   - Handles task management operations
+   - Tools: `get_tasks`, `add_new_task`, `complete_task`
+   - Runs on port 8010 by default
 
-- **Memory Server** — Stores and retrieves memory using Mem0 and Qdrant.
-- **Task Manager Server** — Adds, retrieves, and marks tasks as completed.
-- **Calendar Manager Server** — Fetches calendar events.
+3. **Calendar Server** (`server/server_calendar.py`)
+   - Manages calendar events
+   - Tool: `get_events`
+   - Runs on port 8020 by default
 
-Core components:
+4. **Crawler Server** (`server/crawler_server.py`)
+   - Provides web crawling capabilities
+   - Tools:
+     - `crawl_page`: Extract content from a single webpage
+     - `crawl_site`: Recursively crawl a website
+     - `search_page`: Search for text within a webpage
+   - Runs on port 3005 by default
+   - Stores results in `crawler_data.json`
 
-- **LangChain Agent** — For orchestrating tool use.
-- **OpenAI-Compatible API** — For intent classification and LLM-powered responses.
-- **Mem0 + Qdrant** — Long-term memory with vector search.
-- **FastMCP** — Communication over Server-Sent Events (SSE).
+### Client Components
 
----
+1. **Simple Client** (`client/01a_simple_client.py`)
+   - Basic task manager interaction
+   - Demonstrates direct MCP server communication
 
-## Features
+2. **Multi-Server Client** (`client/01b_client.py`)
+   - Interacts with all MCP servers
+   - Shows memory, task, calendar, and crawler integration
 
-- 📚 **Memory Management**
-  - Store, search, and retrieve memories via Mem0 and Qdrant.
-  
-- ✅ **Task Management**
-  - Add, list, and complete tasks using JSON-backed MCP server.
-  
-- 📅 **Calendar Management**
-  - Query and retrieve upcoming calendar events.
-  
-- 🤖 **Intent Classification**
-  - Classify queries to determine whether to use memory, task, or calendar tools.
-  
-- 🌐 **Multi-Server Communication**
-  - Supports multiple MCP endpoints using SSE and authentication.
+3. **LLM Client** (`client/02_llm.py`)
+   - Implements LLM-driven tool use
+   - Uses OpenAI-compatible API for intent classification
 
-- 🧠 **Agent Intelligence**
-  - Uses LangChain agents to reason over which tool to use and manage dialogue.
+4. **LangChain Agent** (`client/03_agents.py`)
+   - Full agent implementation using LangChain
+   - Integrates all tools and capabilities
 
----
+## 🛠️ Setup and Installation
 
-## Prerequisites
+### Prerequisites
 
-- Python **3.13+**
-- [`uv`](https://github.com/astral-sh/uv) (fast dependency manager)
+- Python 3.13+
+- `uv` package manager
 - OpenAI API key or compatible local API (e.g., Ollama)
-- Qdrant running locally (configured in `qdrant_db/`)
-- Git (for cloning the repo)
+- Qdrant running locally
+- Git
+- Additional dependencies for web crawling:
+  - `aiohttp`
+  - `beautifulsoup4`
 
----
+### Environment Setup
 
-## Environment Setup
+1. **Install Dependencies**
 
-### 1. Install dependencies using `uv`
+   ```bash
+   uv sync
+   ```
 
-```bash
-uv sync
-```
+2. **Configure Environment**
 
-### 2. Install and Configure Ollama
+   Create a `.env` file with:
 
-If you're using a local LLM backend (like Ollama):
+   ```env
+   # For Ollama (local LLM)
+   MODEL="qwen2:7b-instruct"
+   OPENAI_API_KEY="ollama"
+   OPENAI_BASE_URL="http://localhost:11434/v1"
+   OLLAMA_BASE_URL="http://localhost:11434/v1"
 
-```bash
-# Install Ollama from https://ollama.com
+   # For OpenAI API
+   MODEL="gpt-4o-mini"
+   OPENAI_API_KEY="your-api-key"
+   ```
 
-# For features involving LLM-driven tool use (like in client/02_llm.py and client/03_agents.py),
-# you need an Ollama model that supports OpenAI-compatible function/tool calling.
-# 'qwen2:7b-instruct' is a good candidate for this. Ensure it's pulled and available:
-ollama pull qwen2:7b-instruct
+3. **Start Qdrant**
 
-# Other models like llama3:latest might not support tool calling out-of-the-box.
-# You can list your installed models with `ollama list`.
-# If using a different model, verify its tool-calling capabilities.
-```
+   ```bash
+   docker run -p 6333:6333 -v "$(pwd)/qdrant_db":/qdrant/storage qdrant/qdrant
+   ```
 
-Or configure your .env for OpenAI or Inferix endpoints.
+## 🏃‍♂️ Running the Project
 
-### 3. Set Environment Variables
+1. **Start MCP Servers**
 
-Create a `.env` file in the project root (you can copy `.env.example` if it exists):
+   ```bash
+   uv run server/server_memory.py
+   uv run server/server_tasks.py
+   uv run server/server_calendar.py
+   uv run server/crawler_server.py
+   ```
 
-```bash
-cp .env.example .env
-```
+2. **Run Client Scripts**
 
-Edit the `.env` file with the necessary configurations. Here are the key variables:
+   ```bash
+   # Basic task manager
+   uv run client/01a_simple_client.py
 
-**For using Ollama (local LLM):**
+   # Multi-server client
+   uv run client/01b_client.py
 
-```env
-# Specify the Ollama model to use (e.g., llama3, qwen2:7b-instruct)
-MODEL="qwen2:7b-instruct" # or LLM_CHOICE for 03_agents.py
-# Set a placeholder API key for the OpenAI library
-OPENAI_API_KEY="ollama"
-# Point to your local Ollama server's OpenAI-compatible API endpoint
-OPENAI_BASE_URL="http://localhost:11434/v1"
-# OLLAMA_BASE_URL might also be used by some scripts if OPENAI_BASE_URL is not picked up.
-OLLAMA_BASE_URL="http://localhost:11434/v1"
-```
+   # LLM-driven client
+   uv run client/02_llm.py
 
-**For using OpenAI API (cloud LLM):**
+   # Full LangChain agent
+   uv run client/03_agents.py
+   ```
 
-```env
-# Specify the OpenAI model to use (e.g., gpt-3.5-turbo, gpt-4o-mini)
-MODEL="gpt-4o-mini" # or LLM_CHOICE for 03_agents.py
-# Your actual OpenAI API key
-OPENAI_API_KEY="sk-your_openai_api_key_here"
-# Ensure OPENAI_BASE_URL and OLLAMA_BASE_URL are commented out or removed if using OpenAI directly.
-# # OPENAI_BASE_URL="http://localhost:11434/v1"
-# # OLLAMA_BASE_URL="http://localhost:11434/v1"
-```
+## 🔧 Technical Details
 
-The API keys `secret-key1`, `secret-key2`, `secret-key3` found in `servers.yaml` are for the internal authentication of this project's MCP servers and are separate from your LLM provider API keys.
+### Server Architecture
 
-### 4. Start Qdrant Locally
+- Each server runs independently using FastMCP
+- Servers communicate via Server-Sent Events (SSE)
+- Authentication using API keys
+- Environment-based configuration
 
-You can run Qdrant via Docker (adjust path as needed):
+### Client Architecture
 
-```bash
-docker run -p 6333:6333 -v "$(pwd)/qdrant_db":/qdrant/storage qdrant/qdrant
-```
+- Modular design with separate components
+- SSE client for real-time communication
+- LLM integration for intelligent responses
+- LangChain for agent orchestration
 
-**Note for Windows Users:** If using Command Prompt or PowerShell, replace `$(pwd)` with the absolute path to the project's `qdrant_db` directory (e.g., `-v C:\\Users\\YourUser\\path\\to\\ishwanku-mcp-agent-poc\\qdrant_db:/qdrant/storage`).
+### Memory System
 
-## Running the Project
+- Mem0 for memory management
+- Qdrant for vector storage
+- Semantic search capabilities
+- User-based memory isolation
 
-**Important Run Order:**
+### Task System
 
-1. Ensure prerequisite services (Qdrant, and Ollama if used) are started and running.
-2. Start the MCP servers.
-3. Then, run the client scripts.
+- JSON-based task storage
+- CRUD operations for tasks
+- User-based task isolation
+- Task completion tracking
 
-### 1. Start MCP Servers
+### Calendar System
 
-Each MCP server runs independently:
+- YAML-based event storage
+- Event retrieval capabilities
+- Extensible for calendar API integration
 
-```bash
-uv run server/server_memory.py     # Memory server
-uv run server/server_tasks.py      # Task manager
-uv run server/server_calendar.py   # Calendar manager
-```
+### Crawler System
 
-### 2. Run Client Scripts
+- Web page content extraction
+- Recursive site crawling
+- Text search within pages
+- JSON-based result storage
+- Rate limiting and depth control
+- BeautifulSoup for HTML parsing
 
-From the `client/` directory, choose a script based on your use case:
+## 📝 License
 
-```bash
-uv run client/01a_simple_client.py    # Basic task manager interaction
-uv run client/01b_client.py           # Multi-server memory, task, calendar
-uv run client/02_llm.py               # LLM-driven tool use with multiple MCP servers
-uv run client/03_agents.py            # Full LangChain agent
-```
+This project is licensed under the MIT License.
 
-## Assets
+## 🙏 Acknowledgements
 
-Additional resources such as screenshots or diagrams can be found in the assets/ directory (if provided).
-
-## Tech Stack
-
-| Component         | Tool / Library        |
-|-------------------|-----------------------|
-| LLM               | Ollama / OpenAI API   |
-| Memory DB         | Qdrant                |
-| Vector Interface  | Mem0                  |
-| Agent Framework   | LangChain             |
-| API Protocol      | FastMCP (SSE)         |
-| Language          | Python 3.13+          |
-| Dependency Mgmt   | uv                    |
-
-## License
-
-This project is licensed under the MIT License — feel free to use, modify, and distribute.
-
-## Acknowledgements
-
-Mem0
-
-Qdrant
-
-LangChain
-
-FastMCP
-
-Ollama
+- Mem0
+- Qdrant
+- LangChain
+- FastMCP
+- Ollama
+- BeautifulSoup4
+- aiohttp

@@ -10,7 +10,10 @@ This module provides the `ClientManager` class, which is responsible for:
 """
 import json
 import yaml
-from fastmcp.client import MCPClient
+# Updated import to use 'Client' instead of 'MCPClient' due to library update or naming change
+from fastmcp.client import Client as MCPClient
+# Removed incorrect import for transport as it does not exist in fastmcp
+# from fastmcp.transport.http import HTTPTransport  # Adjust based on actual library structure if different
 from typing import List, Any
 
 class ClientManager:
@@ -23,14 +26,23 @@ class ClientManager:
         try:
             with open(config_file, 'r') as f:
                 config = yaml.safe_load(f)
-            for server_name, server_info in config.get('servers', {}).items():
+                print(f"ClientManager: Loaded config from {config_file}: {config}")
+            servers_config = config.get('servers', {})
+            print(f"ClientManager: Number of servers in config: {len(servers_config)}")
+            for server_name, server_info in servers_config.items():
                 server_url = f"http://{server_info['host']}:{server_info['port']}/sse"
                 api_key = server_info.get('api_key', '')
-                client = MCPClient(name=server_name, server_url=server_url, api_key=api_key)
-                self.clients.append(client)
-                # Store tool names for lookup during process_tool_call
-                client.tools = server_info.get('tools', [])
-                print(f"ClientManager: Added server configuration: {server_name} ({server_url})")
+                print(f"ClientManager: Processing server {server_name} with URL {server_url}")
+                try:
+                    # Removed transport initialization as it does not exist in fastmcp
+                    # transport = HTTPTransport()  # Create transport instance, adjust if different in library
+                    client = MCPClient(name=server_name, server_url=server_url, api_key=api_key)
+                    self.clients.append(client)
+                    # Store tool names for lookup during process_tool_call
+                    client.tools = server_info.get('tools', [])
+                    print(f"ClientManager: Successfully added server configuration: {server_name} ({server_url})")
+                except Exception as e:
+                    print(f"ClientManager: Error creating client for server {server_name}: {e}")
         except Exception as e:
             print(f"ClientManager: Error loading server configurations from {config_file}: {e}")
 
