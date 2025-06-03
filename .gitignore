@@ -19,7 +19,6 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
 
 # Virtual Environment
 .env
@@ -29,96 +28,49 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-.python-version
 
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-*.code-workspace
-.history/
-
-# IDE - PyCharm
+# IDE
 .idea/
-*.iml
-*.iws
-*.ipr
-.idea_modules/
-
-# IDE - Jupyter Notebook
-.ipynb_checkpoints
-*.ipynb
+.vscode/
+*.swp
+*.swo
+.DS_Store
 
 # Testing
+.pytest_cache/
 .coverage
 htmlcov/
-.pytest_cache/
 .tox/
+.nox/
 coverage.xml
 *.cover
 .hypothesis/
-.pytest_cache/
 
-# Database
-*.db
-*.sqlite3
-*.sqlite
-mcp_agent.db
-qdrant_db/
-qdrant_db;C/
-
-# Logs
-*.log
-logs/
-log/
-test_intent.log
-
-# Environment variables
-.env
-.env.*
-!.env.example
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
 
 # Project specific
-tasks/
-assets/
-crawler_data.json
-*.yaml
-!servers.yaml
-!alembic.ini
-
-# Google Calendar credentials
-credentials.json
-token.json
-*.json
-!package.json
-!package-lock.json
-
-# Alembic
-alembic/versions/
-
-# Temporary files
-*.tmp
-*.bak
-*.swp
-*~
-
-# Cache
-.cache/
-.pytest_cache/
-__pycache__/
+*.log
+qdrant_db/
+tasks.json
+test_intent.log
+uv.lock
 
 # Distribution
 dist/
 build/
 *.egg-info/
 
-# System Files
-.DS_Store
-Thumbs.db
-desktop.ini
+# Jupyter Notebook
+.ipynb_checkpoints
 
-# Lock files
-uv.lock
-poetry.lock
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Database
+*.db
+*.sqlite3
