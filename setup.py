@@ -26,7 +26,14 @@ setup(
         "google-api-python-client>=2.118.0",
         "qdrant-client>=1.7.0",
         "sentence-transformers>=2.5.1",
-        "python-multipart>=0.0.9"
+        "python-multipart>=0.0.9",
+        # LLM-related dependencies
+        "httpx>=0.24.0",  # For Ollama API calls
+        "numpy>=1.24.0",
+        "scikit-learn>=1.0.0",
+        "transformers>=4.30.0",
+        "torch>=2.0.0",
+        "vllm>=0.2.0"
     ],
     python_requires=">=3.9",
 ) 

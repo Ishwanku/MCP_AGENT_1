@@ -1,92 +1,226 @@
 """
-MCP Server for managing long-term memory using Mem0.
+LLM-enhanced Memory Agent for the MCP system.
 
-This server provides tools to save, search, and retrieve memories.
-It utilizes a Mem0 client for memory operations and exposes these
-capabilities through the FastMCP protocol.
+This agent provides memory storage and retrieval capabilities with semantic search
+using LLM embeddings and vector storage.
 """
+
 import json
-from ..server.fastmcp import FastMCP
-import warnings
-import os
-from dotenv import load_dotenv
-import sys
-import asyncio
+from typing import Any, Dict, List, Optional
+from datetime import datetime
+from qdrant_client import QdrantClient
+from qdrant_client.http import models
+from ..core.config import settings
+from ..utils.llm_utils import get_embeddings, summarize_text
 
-# Load environment variables from .env file
-# This allows configuration of API keys, host, port, etc. through environment variables
-load_dotenv()
+class MemoryAgent:
+    """Memory Agent with LLM-enhanced capabilities."""
 
-# Suppress specific DeprecationWarnings from websockets.legacy
-# These warnings are filtered to avoid cluttering the console output with deprecation notices
-warnings.filterwarnings("ignore", category=DeprecationWarning, module="websockets.legacy")
-# Suppress the specific DeprecationWarning for websockets.server.WebSocketServerProtocol
-warnings.filterwarnings("ignore", category=DeprecationWarning, message="websockets.server.WebSocketServerProtocol is deprecated")
-warnings.filterwarnings("ignore", category=DeprecationWarning, message="The websockets.server.WebSocketServerProtocol class is deprecated. WebSocketServerProtocol is an alias for ServerProtocol.")
+    def __init__(self):
+        """Initialize the Memory Agent with Qdrant client and collection."""
+        self.client = QdrantClient(
+            url=settings.QDRANT_URL,
+            api_key=settings.QDRANT_API_KEY
+        )
+        self.collection_name = "memories"
+        self._ensure_collection()
 
-# Add the parent directory to the path so we can import from config
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    def _ensure_collection(self):
+        """Ensure the Qdrant collection exists with proper configuration."""
+        collections = self.client.get_collections().collections
+        collection_names = [collection.name for collection in collections]
 
-from ..core.config import MEMORY_SERVER_PORT, MEMORY_SERVER_API_KEY
+        if self.collection_name not in collection_names:
+            self.client.create_collection(
+                collection_name=self.collection_name,
+                vectors_config=models.VectorParams(
+                    size=1536,  # OpenAI embedding dimension
+                    distance=models.Distance.COSINE
+                )
+            )
 
-# Define memory-related tools
-def save_memory_tool(data: dict) -> str:
-    """
-    Saves a new memory entry to the long-term memory storage.
+    async def store_memory(
+        self,
+        content: str,
+        metadata: Optional[Dict[str, Any]] = None,
+        generate_summary: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Store a memory with optional metadata and summary.
 
-    Args:
-        data (dict): Dictionary containing 'content' for the memory.
+        Args:
+            content: The memory content to store.
+            metadata: Optional metadata to store with the memory.
+            generate_summary: Whether to generate a summary using LLM.
 
-    Returns:
-        A confirmation message indicating success.
-    """
-    content = data.get("content")
-    if content is None:
-        return "Error: 'content' not provided in data."
-    # Placeholder for actual memory saving logic (e.g., to Qdrant)
-    print(f"Saving memory: {content}")
-    return f"Successfully saved memory: {content}"
+        Returns:
+            Dictionary containing the stored memory information.
+        """
+        # Generate embeddings for the content
+        embeddings = await get_embeddings(content)
+        
+        # Generate summary if requested
+        summary = None
+        if generate_summary:
+            summary = await summarize_text(content)
 
-def search_memories_tool(data: dict) -> str:
-    """
-    Searches existing memories based on a query string using vector search.
+        # Prepare metadata
+        memory_metadata = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "content": content,
+            "summary": summary,
+            **(metadata or {})
+        }
 
-    Args:
-        data (dict): Dictionary containing 'query' for the search.
+        # Store in Qdrant
+        point_id = self.client.upsert(
+            collection_name=self.collection_name,
+            points=[
+                models.PointStruct(
+                    id=hash(content),  # Simple hash as ID
+                    vector=embeddings[0],
+                    payload=memory_metadata
+                )
+            ]
+        )
 
-    Returns:
-        A JSON string list of memory contents that match the query.
-    """
-    query = data.get("query")
-    if query is None:
-        return "Error: 'query' not provided in data."
-    # Placeholder for actual search logic
-    print(f"Searching memories for: {query}")
-    return json.dumps([f"Sample memory for {query}"])
+        return {
+            "id": point_id,
+            "metadata": memory_metadata
+        }
 
-def get_all_memories_tool(data: dict) -> str: # Added data param even if not used by placeholder
-    """
-    Retrieves all stored memories for the user from the memory database.
+    async def search_memories(
+        self,
+        query: str,
+        limit: int = 5,
+        score_threshold: float = 0.7
+    ) -> List[Dict[str, Any]]:
+        """
+        Search memories using semantic similarity.
 
-    Args:
-        data (dict): Optional data dictionary (not used by placeholder).
+        Args:
+            query: The search query.
+            limit: Maximum number of results to return.
+            score_threshold: Minimum similarity score threshold.
 
-    Returns:
-        A JSON string list of all memory contents.
-    """
-    # Placeholder for actual retrieval logic
-    print("Retrieving all memories")
-    return json.dumps(["Memory 1", "Memory 2", "Memory 3", "Memory 4", "Memory 5"])
+        Returns:
+            List of matching memories with their metadata.
+        """
+        # Generate embeddings for the query
+        query_embedding = await get_embeddings(query)
 
-# Initialize FastMCP server for Memory operations
-# FastMCP is the protocol used for communication between clients and servers
-memory_server = FastMCP(name="Memory Agent", port=MEMORY_SERVER_PORT, api_key=MEMORY_SERVER_API_KEY)
+        # Search in Qdrant
+        search_result = self.client.search(
+            collection_name=self.collection_name,
+            query_vector=query_embedding[0],
+            limit=limit,
+            score_threshold=score_threshold
+        )
 
-# Register memory tools
-memory_server.register_tool('save_memory', save_memory_tool)
-memory_server.register_tool('search_memories', search_memories_tool)
-memory_server.register_tool('get_all_memories', get_all_memories_tool)
+        return [
+            {
+                "id": hit.id,
+                "score": hit.score,
+                "metadata": hit.payload
+            }
+            for hit in search_result
+        ]
 
-if __name__ == "__main__":
-    # The FastMCP instance has its own run method that starts Uvicorn.
-    memory_server.run()
+    async def get_memory_context(
+        self,
+        query: str,
+        max_tokens: int = 1000
+    ) -> str:
+        """
+        Get relevant memory context for a query.
+
+        Args:
+            query: The query to get context for.
+            max_tokens: Maximum number of tokens in the context.
+
+        Returns:
+            Concatenated relevant memory content.
+        """
+        # Search for relevant memories
+        memories = await self.search_memories(query, limit=3)
+        
+        # Combine memory content
+        context = "\n\n".join(
+            f"Memory {i+1}:\n{mem['metadata']['content']}"
+            for i, mem in enumerate(memories)
+        )
+
+        # If context is too long, summarize it
+        if len(context) > max_tokens * 4:  # Rough estimate of tokens
+            context = await summarize_text(context, max_length=max_tokens * 4)
+
+        return context
+
+    async def delete_memory(self, memory_id: int) -> bool:
+        """
+        Delete a memory by its ID.
+
+        Args:
+            memory_id: The ID of the memory to delete.
+
+        Returns:
+            True if deletion was successful, False otherwise.
+        """
+        try:
+            self.client.delete(
+                collection_name=self.collection_name,
+                points_selector=models.PointIdsList(
+                    points=[memory_id]
+                )
+            )
+            return True
+        except Exception:
+            return False
+
+    async def update_memory(
+        self,
+        memory_id: int,
+        content: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Update a memory's content and/or metadata.
+
+        Args:
+            memory_id: The ID of the memory to update.
+            content: New content for the memory.
+            metadata: New metadata for the memory.
+
+        Returns:
+            Updated memory information if successful, None otherwise.
+        """
+        try:
+            # Get existing memory
+            memory = self.client.retrieve(
+                collection_name=self.collection_name,
+                ids=[memory_id]
+            )[0]
+
+            # Update content and generate new embeddings if needed
+            if content:
+                embeddings = await get_embeddings(content)
+                memory.vector = embeddings[0]
+                memory.payload["content"] = content
+                memory.payload["summary"] = await summarize_text(content)
+
+            # Update metadata
+            if metadata:
+                memory.payload.update(metadata)
+
+            # Update in Qdrant
+            self.client.upsert(
+                collection_name=self.collection_name,
+                points=[memory]
+            )
+
+            return {
+                "id": memory_id,
+                "metadata": memory.payload
+            }
+        except Exception:
+            return None

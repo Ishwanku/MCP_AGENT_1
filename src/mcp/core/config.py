@@ -12,7 +12,7 @@ Example:
 """
 
 import os
-from typing import Optional
+from typing import Optional, List
 from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -78,6 +78,97 @@ class SecuritySettings(BaseSettings):
     )
 
 
+class LLMSettings(BaseSettings):
+    """LLM configuration settings.
+    
+    Attributes:
+        LLM_TYPE: Type of LLM to use ('ollama', 'openai', 'huggingface', 'vllm').
+        LLM_BASE_URL: Base URL for the LLM API.
+        LLM_MODEL: The model name to use.
+        MAX_TOKENS: Maximum tokens for LLM responses.
+        TEMPERATURE: Temperature setting for LLM responses.
+        TOP_P: Top-p sampling parameter.
+        TOP_K: Top-k sampling parameter.
+        REPETITION_PENALTY: Penalty for repeated tokens.
+        STOP_SEQUENCES: List of sequences to stop generation at.
+        EMBEDDING_TYPE: Type of embedding model ('local', 'openai', 'huggingface').
+        EMBEDDING_MODEL: Model to use for embeddings.
+        EMBEDDING_DIMENSION: Dimension of embedding vectors.
+        CACHE_DIR: Directory for caching models and embeddings.
+        BATCH_SIZE: Batch size for processing multiple requests.
+        TIMEOUT: Timeout for API requests in seconds.
+    """
+    model_config = SettingsConfigDict(env_prefix="LLM_")
+
+    # Provider settings
+    LLM_TYPE: str = Field(
+        default="ollama",
+        description="Type of LLM to use (ollama, openai, huggingface, vllm)"
+    )
+    LLM_BASE_URL: str = Field(
+        default="http://localhost:11434",
+        description="Base URL for the LLM API"
+    )
+    LLM_MODEL: str = Field(
+        default="qwen2:7b-instruct",
+        description="The model name to use"
+    )
+
+    # Generation settings
+    MAX_TOKENS: int = Field(
+        default=2000,
+        description="Maximum tokens for LLM responses"
+    )
+    TEMPERATURE: float = Field(
+        default=0.7,
+        description="Temperature setting for LLM responses"
+    )
+    TOP_P: float = Field(
+        default=0.9,
+        description="Top-p sampling parameter"
+    )
+    TOP_K: int = Field(
+        default=40,
+        description="Top-k sampling parameter"
+    )
+    REPETITION_PENALTY: float = Field(
+        default=1.1,
+        description="Penalty for repeated tokens"
+    )
+    STOP_SEQUENCES: List[str] = Field(
+        default=["</s>", "Human:", "Assistant:"],
+        description="List of sequences to stop generation at"
+    )
+
+    # Embedding settings
+    EMBEDDING_TYPE: str = Field(
+        default="local",
+        description="Type of embedding model (local, openai, huggingface)"
+    )
+    EMBEDDING_MODEL: str = Field(
+        default="qwen2:7b-instruct",
+        description="Model to use for embeddings"
+    )
+    EMBEDDING_DIMENSION: int = Field(
+        default=4096,
+        description="Dimension of embedding vectors"
+    )
+
+    # Performance settings
+    CACHE_DIR: str = Field(
+        default="./cache",
+        description="Directory for caching models and embeddings"
+    )
+    BATCH_SIZE: int = Field(
+        default=8,
+        description="Batch size for processing multiple requests"
+    )
+    TIMEOUT: int = Field(
+        default=30,
+        description="Timeout for API requests in seconds"
+    )
+
+
 class Settings(BaseSettings):
     """Main settings class combining all configuration categories.
     
@@ -97,6 +188,7 @@ class Settings(BaseSettings):
         db: Database settings.
         api: API settings.
         security: Security settings.
+        llm: LLM settings.
         LOG_LEVEL: Logging level.
         LOG_FORMAT: Logging format string.
     """
@@ -122,6 +214,9 @@ class Settings(BaseSettings):
 
     # Security settings
     security: SecuritySettings = SecuritySettings()
+
+    # LLM settings
+    llm: LLMSettings = LLMSettings()
 
     # Logging settings
     LOG_LEVEL: str = Field(default="INFO")
